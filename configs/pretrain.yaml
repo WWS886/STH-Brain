@@ -1,0 +1,157 @@
+schema_version: sth_brain_hierarchical_ts_jepa
+name: STH-Brain
+model:
+  algorithm_version: hierarchical_ts_jepa
+  atlas_path: ${STH_BRAIN_ROOT}/dataset/Node_CC200.node
+  block_seconds: 8.0
+  min_block_coverage: 0.75
+  local_dim: 64
+  local_layers: 1
+  local_heads: 4
+  local_ffn_dim: 256
+  model_dim: 256
+  encoder_layers: 8
+  encoder_heads: 8
+  encoder_ffn_dim: 1024
+  network_predictor_dim: 128
+  network_predictor_layers: 4
+  network_predictor_heads: 4
+  network_predictor_ffn_dim: 512
+  roi_predictor_dim: 128
+  roi_predictor_layers: 4
+  roi_predictor_heads: 4
+  roi_predictor_ffn_dim: 512
+  dropout: 0.0
+  sope_head_fraction: 0.5
+  time_periods:
+  - 8.0
+  - 16.0
+  - 32.0
+  - 64.0
+  - 120.0
+  - 240.0
+  - 480.0
+  - 960.0
+  predictor_mode: context_anchored_cross_attention
+  first_layer_query_residual: false
+  cross_attention_output_bias: false
+  target_query_use_mask_type: false
+  teacher_target_mode: signal_residual
+  target_residual_normalize: true
+  network_embedding_init_std: 0.02
+  network_embedding_scale: 0.1
+  geometry_additive_scale: 0.01
+  huber_beta: 1.0
+  huber_weight: 1.0
+  cosine_weight: 0.0
+  ema_base: 0.994
+  ema_final: 0.9999
+  physical_grid_step_seconds: 1.0
+  local_time_mode: physical_seconds
+  local_time_frequency_min_hz: 0.03125
+  local_time_frequency_max_hz: 0.5
+  physical_kernel_seconds:
+  - 1.0
+  - 3.0
+  - 5.0
+  roi_sope_heads: 4
+  roi_sope_head_fraction: 1.0
+  maximum_time_frequency_octaves: 1.0
+  block_normalization_epsilon: 1.0e-06
+  max_interpolation_gap_seconds: 6.5
+  signal_normalization: visible_scan_roi_zscore
+  normalization_stats_path: ${STH_BRAIN_CACHE_DIR}/roi_train_statistics.json
+  normalization_stats_sha256: ea3812142a0b53ee446be19367e2a49186f54cb9173272f19c4db629e8967790
+  min_normalization_samples: 8
+  representation_architecture: roi_temporal_hierarchy
+  roi_temporal_layers: 8
+  roi_temporal_heads: 16
+  roi_temporal_dim: 256
+  roi_temporal_ffn_dim: 1024
+  roi_temporal_checkpointing: true
+  network_summary_mode: mean_std_attention
+objective:
+  prediction_weight: 1.0
+  covariance_objective: full_branch_logdet_isotropy
+  variance_target: 0.5
+  variance_epsilon: 0.0001
+  normalization: visible_scan_roi_zscore
+  teacher_target: signal_residual
+  representation: layernorm_full_joint_student
+  target_group_weights: []
+  source_risk: subject_mean
+  source_subject_counts: {}
+  roi_prediction_weight: 1.0
+  loss_protocol: roi_network_four_term
+  logdet_alpha: 1.0
+  covariance_start_epoch: 0.0
+  covariance_ramp_end_epoch: 5.0
+  logdet_branch_weights:
+  - 0.5
+  - 0.5
+  context_moment_weight: 0.0
+mask:
+  target_coverage:
+  - 0.15
+  - 0.3
+  exclusion_seconds:
+  - 8.0
+  - 16.0
+  min_exclusion_blocks: 1
+  min_context_fraction: 0.25
+  max_resamples: 32
+  strategy: union
+data:
+  manifest: ${STH_BRAIN_MANIFEST}
+  split_col: split
+  train_split: train
+  val_split: val
+  normalize: none
+  sequence_cache_dir: ${STH_BRAIN_CACHE_DIR}/roi_sequence_npy
+  qc_receipt_path: ${STH_BRAIN_CACHE_DIR}/roi_qc_receipt.json
+  qc_receipt_sha256: 76f4dd2888820862a7882ae2f279b80e454283dac8235a3f8e79b18f3f84908e
+  split_receipt_path: ${STH_BRAIN_SPLIT_RECEIPT}
+  split_receipt_sha256: 8782e3d3708b60eb2705afc3786844e582cb91db8250b22f4867d9d0ce44c6dd
+  sequence_cache_receipt_path: ${STH_BRAIN_CACHE_DIR}/sequence_cache_receipt.json
+  sequence_cache_receipt_sha256: 4b1f881dcfdaeccf29e87087a7453d8931bd911685edbf9d79270fd871558174
+  manifest_sha256: 2753ef71254dc18ee4f5518f6deed634b569a806d6cf92a746b45b9a1a4516d9
+  interface: registered_subject_tasks
+optim:
+  epochs: 500
+  batch_size: 16
+  accumulation_steps: 1
+  student_lr: 1.5e-05
+  predictor_lr: 3.0e-05
+  weight_decay: 0.05
+  warmup_epochs: 10
+  minimum_lr_ratio: 0.05
+  grad_clip: 3.0
+  num_workers: 2
+  amp: true
+  clip_mode: student_predictor
+  student_grad_clip: 3.0
+  predictor_grad_clip: 3.0
+  gradient_diagnostic_every: 175
+  update_diagnostic_every: 35
+  exact_collapse_patience: 3
+  gradient_diagnostic_batches: 3
+runtime:
+  seed: 42
+  gpus: 0,1,2,3,4,5,6,7
+  expected_world_size: 8
+  output_dir: ${STH_BRAIN_OUTPUT_ROOT}/sth_brain/seed42_ep500
+  save_every: 5
+  log_every: 1
+  health_every: 10
+  checkpoint_epochs:
+  - 50
+  - 150
+  - 250
+  - 350
+  - 450
+  - 500
+  stage_health_every_epochs: 1
+  stage_health_max_subjects: 128
+  compression_rank_ratio: 0.5
+  compression_minimum_reference_rank: 0.05
+  compression_patience: 3
